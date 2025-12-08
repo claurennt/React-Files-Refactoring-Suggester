@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block head %}
+    <!-- <link rel="stylesheet" href="style.css" /> -->
+    <title>AI refactorer</title>
+    {% endblock %}
+  </head>
+  <body>
+    <main>
+      <h1>Welcome to AI refactorer!</h1>
+      <h2>
+        This simple Python project will suggest improvements to your code using
+        AI. Start by uploading a file.
+      </h2>
+      <div id="content">{% block content %}{% endblock %}</div>
+    </main>
+  </body>
+</html>
