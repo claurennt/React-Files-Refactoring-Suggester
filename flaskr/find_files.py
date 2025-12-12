@@ -13,7 +13,6 @@ def find_files_in_dir(
 ):
     """Return a list of source files of a certain extensions(s) under a certain dir_path."""
 
-    found_files = []
     for root, dirs, files in os.walk(dir_path):
         # Prevent descending into ignored directories and any hidden dirs
         ignored_set = {name.lower() for name in ignored_directories}
@@ -26,24 +25,23 @@ def find_files_in_dir(
             _, file_extension = os.path.splitext(file)
             if file_extension in file_extensions:
                 file = os.path.join(root, file)
-                found_files.append(file)
-    return found_files
+                yield file
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="Find files by extension in directory",
-        description="Find source files of given extensions",
+        prog="FileFinder",
+        description="Find files of given extensions in directory",
     )
     parser.add_argument("path", nargs="?", default=".", help="Directory to scan")
     parser.add_argument(
         "-e",
         "--extensions",
         nargs="+",
-        default=[".tsx", ".jsx"],
-        help="File extensions to include (e.g. .tsx .jsx)",
+        default=[".tsx", ".jsx", ".js", ".ts"],
+        help="File extensions to include (e.g. .tsx .jsx .ts .js)",
     )
     parser.add_argument(
         "-ignored",
@@ -56,10 +54,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     exts = tuple(args.extensions)
     ignored_dirs = tuple(args.ignored_directories)
-    found = find_files_in_dir(
-        args.path, file_extensions=exts, ignored_directories=ignored_dirs
+    found = list(
+        find_files_in_dir(
+            args.path, file_extensions=exts, ignored_directories=ignored_dirs
+        )
     )
 
-    print(f"Found {len(found)} JS files in {os.path.abspath(args.path)}")
-    for p in found:
-        print(p)
+    print(f"Found {len(found)} files in {os.path.abspath(args.path)}")
+    for file in found:
+        print(file)

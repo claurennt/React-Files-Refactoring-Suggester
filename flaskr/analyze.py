@@ -15,32 +15,19 @@ def analyze(code: str):
     messages = [
         {
             "role": "user",
-            "content": f"refactor the code from the following file to improve its performance and readability:\n\n{code}",
+            "content": f"Can you take on the role of a senior front end engineer and help me with refactoring the following code for testability. If you see any noticeable issues within the code snipped shared, do point out the issues with suggestions for a cleaner, more scalable approach. D.R.Y., S.O.C. patterns should be taken into accountdo not over abstract it, think that more junior people should also be able to read it.also take into consideration refactoring the code in a way that it is easier then to test:\n\n{code}",
         },
     ]
-
-    AI_response = ""
 
     try:
         # Get streaming response
         stream = client.chat(model="gpt-oss:120b", messages=messages, stream=True)
 
         for chunk in stream:
-            # Handle different response formats
-            if hasattr(chunk, "message") and chunk.message:
-                if hasattr(chunk.message, "content"):
-                    AI_response += chunk.message.content
-            elif hasattr(chunk, "content"):
-                AI_response += chunk.content
-            elif isinstance(chunk, dict):
-                if "message" in chunk and "content" in chunk["message"]:
-                    AI_response += chunk["message"]["content"]
-                elif "content" in chunk:
-                    AI_response += chunk["content"]
-            elif isinstance(chunk, str):
-                AI_response += chunk
-        print(AI_response)
-        return AI_response
+
+            chunk_content = chunk.message.content
+
+            yield chunk_content
 
     except Exception as e:
         return f"Error calling Ollama API: {str(e)}"
@@ -75,28 +62,36 @@ if __name__ == "__main__":
 
     from find_files import find_files_in_dir
 
-    found_files = find_files_in_dir(
-        args.path, file_extensions=exts, ignored_directories=ignored_dirs
+    found = list(
+        find_files_in_dir(
+            args.path, file_extensions=exts, ignored_directories=ignored_dirs
+        )
     )
 
-    found_files = dict(enumerate(found_files, 1))
-    length = len(found_files)
+    found = dict(enumerate(found, 1))
+    length = len(found)
     print(f"Found {length} JS files in path {args.path}")
+
     if length == 0:
         print(f"No JS files found in path {args.path}")
         exit()
+
     print(f"Found {length} JS files in path {args.path}")
-    for key, value in found_files.items():
+
+    for key, value in found.items():
         print(f"{key}: {value}")
 
-    user_choice = input(
-        f">>>> Which file would you like to analyze with AI? Chose one between 1 and {length}:\n"
+    user_choice = int(
+        input(
+            f">>>> Which file would you like to analyze with AI? Chose one between 1 and {length}:\n"
+        )
     )
-    chosen_file = found_files[int(user_choice)]
+    chosen_file = found[user_choice]
 
     content = ""
 
     with open(chosen_file, "r") as f:
         content = f.read()
 
-    analyze(content)
+    for chunk in analyze(content):
+        print(chunk, end="", flush=True)
