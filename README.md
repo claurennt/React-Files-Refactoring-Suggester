@@ -1,4 +1,4 @@
-# JS Files Refactoring Suggester 🐍⚛️
+# JS Files Refactoring Suggester 🐍
 
 A Python tool that analyzes JS components and suggests refactoring improvements using AI.
 
