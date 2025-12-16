@@ -12,6 +12,7 @@ import re, os, json
 
 from tempfile import TemporaryDirectory
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
 
 _ALLOWED_EXTENSIONS_RE = re.compile(
     r"\.(ts|js|tsx|jsx)$",
@@ -25,7 +26,7 @@ def js_escape(s: str) -> str:
     return json.dumps(s)
 
 
-def process_uploaded_file(file):
+def process_uploaded_file(file: FileStorage):
     with TemporaryDirectory() as temp_dir:
         secured_filename = secure_filename(file.filename)
         path = os.path.join(temp_dir, secured_filename)
@@ -55,18 +56,19 @@ def home():
 @app.route("/", methods=["POST"])
 def upload_and_analyze():
     file = request.files.get("file")
+    user_input = request.form.get("user-input")
 
-    if not file:
-        flash("No file selected")
+    if not file and not user_input:
+        flash("No data, please upload a file or paste your code")
         return redirect("/")
 
-    if not allowed_file(file.filename):
+    if file and not allowed_file(file.filename):
         flash("File type not allowed. Please upload .ts, .js, .tsx, or .jsx files.")
         return redirect("/")
 
     # Read file safely
     try:
-        content = process_uploaded_file(file)
+        content = user_input or process_uploaded_file(file)
     except Exception as e:
         return render_template("analysis.html", error=str(e))
 

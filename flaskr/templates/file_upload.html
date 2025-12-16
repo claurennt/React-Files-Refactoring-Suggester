@@ -3,9 +3,12 @@
 {% endblock %}
 {% extends "base.html" %} 
 {% block content %}
-<form method=post enctype=multipart/form-data  >
+<form method=post enctype=multipart/form-data>
     <label for="uploader">Upload a file (allowed extensions: .js, .ts, .jsx, .tsx)</label>
     <input type=file name=file id="uploader" accept=".ts, .js, .tsx, .jsx">
+    <p>or</p>
+    <label for="user-input">Paste code:</label>
+    <textarea id="user-input" rows="15" name="user-input"></textarea>
     <input type=submit value=Upload>
 </form>
 {% endblock %}
