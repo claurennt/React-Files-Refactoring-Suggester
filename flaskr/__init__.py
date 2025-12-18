@@ -5,37 +5,27 @@ from flask import (
     render_template,
     request,
 )
-import re, os
-from tempfile import TemporaryDirectory
-from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage
 
-_ALLOWED_EXTENSIONS_RE = re.compile(
-    r"\.(ts|js|tsx|jsx)$",
-    re.IGNORECASE,
-)
-
-
-def process_uploaded_file(file: FileStorage):
-    with TemporaryDirectory() as temp_dir:
-        secured_filename = secure_filename(file.filename)
-        path = os.path.join(temp_dir, secured_filename)
-        file.save(path)
-
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-
-
-def allowed_file(
-    filename: str, extensions: tuple[str, ...] = _ALLOWED_EXTENSIONS_RE
-) -> bool:
-    """Check if file has an allowed extension using a cached regex."""
-    return bool(extensions.search(filename))
+import os
 
 
 app = Flask(__name__)
-app.config.from_mapping(SECRET_KEY="dev")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-key-for-local-only")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+@app.errorhandler(413)
+def too_large():
+    flash("File too large (max 16MB).")
+    return redirect("/")
 
 
 @app.route("/", methods=["GET"])
@@ -45,8 +35,10 @@ def home():
 
 @app.route("/", methods=["POST"])
 def upload_and_analyze():
+    from flaskr.utils.utils import allowed_file, process_uploaded_file, sanitize_input
+
     file = request.files.get("file")
-    user_input = request.form.get("user-input")
+    user_input = request.form.get("user-input").strip()
 
     if not file and not user_input:
         flash("No data, please upload a file or paste your code")
@@ -57,22 +49,14 @@ def upload_and_analyze():
         return redirect("/")
 
     try:
-        content = user_input or process_uploaded_file(file)
+        input = user_input or process_uploaded_file(file)
+        content = sanitize_input(input)
     except Exception as e:
         return render_template("analysis.html", error=str(e))
     # Perform analysis
     try:
         from markdown_it import MarkdownIt
-
-        try:
-            from analyze import analyze
-        except ImportError:
-            try:
-                from .analyze import analyze
-            except ImportError:
-                return render_template(
-                    "analysis.html", error="Analysis module not found"
-                )
+        from .analyze import analyze
 
         full_markdown = "".join(analyze(content))
         markdown = MarkdownIt("gfm-like")
@@ -82,3 +66,8 @@ def upload_and_analyze():
         return render_template("analysis.html", error=str(e))
 
     return render_template("analysis.html", analysis=html)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
