@@ -23,11 +23,8 @@ def analyze(code: str):
         # Get streaming response
         stream = client.chat(model="gpt-oss:120b", messages=messages, stream=True)
 
-        for chunk in stream:
-
-            chunk_content = chunk.message.content
-
-            yield chunk_content
+        full_content = "".join(chunk.message.content for chunk in stream)
+        return full_content
 
     except Exception as e:
         return f"Error calling Ollama API: {str(e)}"
