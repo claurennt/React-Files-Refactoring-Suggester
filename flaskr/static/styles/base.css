@@ -26,3 +26,10 @@ h2 {
 #ssr-validation {
   text-align: center;
 }
+#error {
+  color: #d32f2f;
+  background: #ffebee;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 10px 0;
+}

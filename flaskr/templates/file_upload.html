@@ -1,14 +1,40 @@
-{% block styles %}
-    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename = '/styles/file_upload.css') }}">
-{% endblock %}
-{% extends "base.html" %} 
-{% block content %}
-<form method=post enctype=multipart/form-data>
-    <label for="uploader">Upload a file (allowed extensions: .js, .ts, .jsx, .tsx)</label>
-    <input type=file name=file id="uploader" accept=".ts, .js, .tsx, .jsx">
-    <p>or</p>
-    <label for="user-input">Paste code:</label>
-    <textarea id="user-input" rows="15" name="user-input"></textarea>
-    <input type=submit value=Upload>
+{% extends "base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/file_upload.css') }}"
+/>
+{% endblock %} {% block content %}
+<form method="post" enctype="multipart/form-data" id="upload-form">
+  <label for="uploader">
+    Upload a file (allowed extensions: .js, .ts, .jsx, .tsx)
+  </label>
+  <input type="file" name="file" id="uploader" accept=".js,.ts,.jsx,.tsx" />
+
+  <p>or</p>
+
+  <label for="user-input">Paste code:</label>
+  <textarea
+    id="user-input"
+    name="user-input"
+    rows="15"
+    placeholder="Paste your code here..."
+  ></textarea>
+
+  <button class="submit">Start analysis</button>
 </form>
+
+<output id="loading" tabindex="-1" style="display: none">
+  <span aria-hidden>⏳</span> Analyzing your code…
+</output>
+{% endblock %} {% block javascript %}
+<script>
+  const form = document.getElementById('upload-form');
+  form.addEventListener('submit', () => {
+    const loading = document.getElementById('loading');
+    loading.style.display = 'block';
+    loading.focus();
+
+    form.style.display = 'none';
+  });
+</script>
 {% endblock %}
